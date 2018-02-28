@@ -46,131 +46,23 @@ linked environment, represented by the following diagram:
 
 \end{tikzpicture}
 \end{center}
+
 Now each of the environments is represented by a linked list, with the binding
 of $x$ shared between them. This is an example of a \emph{shared} environment
 ~\cite{appel1988optimizing}. This shared, linked structure dates back to the 
 first machine for evaluating expressions: Landin's SECD
 machine~\cite{landin1964mechanical}.
 
-The drawbacks and advantages of each approach are well known. With a flat
-environment, variable lookup can be performed with a simple offset
-~\cite{jonesstg,appel2006compiling}. On the other hand, significant
-duplication can occur, as we will discuss in Section~\ref{sec:exist}.
-With a shared environment, that duplication is removed, but at the cost of
-possible link traversal upon dereference. 
-
-As with most topics in compilers and abstract machines, the design space is
-actually more complex. For example, Appel and Jim show a wide range of hybrids
-~\cite{appel1988optimizing} between the two, and Appel and Shao
-~\cite{shao1994space} show an optimized hybrid that aims to achieve the benefits
-of both approaches. And as shown in the next section, choice of evaluation
-strategy further complicates the picture.
-
-\subsection{Existing Call-by-Need Environments} \label{sec:exist}
-
-Existing call by need machines use flat environments with a heap of
-closures~\cite{jonesstg,TIM,johnsson1984efficient,boquist1997grin}. These
-environments may contain some combination of primitive values and pointers into the
-heap ($p$ below). The pointers and heap implement the memoization of results
-required for call by need. Returning to the earlier example, $(\lambda
-x.(\lambda y.t) (\lambda z.t_1)) t_2$, we can view a simplified execution state
-for this approach when entering $t$ as follows:
-
-\begin{center}
-\textbf{Closure}
-\begin{align*}
-t[x=p, y=p_1] \\
-\end{align*}
-\textbf{Heap}
-\begin{align*}
-p &\mapsto t_2[\bullet] \\
-p_1 &\mapsto \lambda z.t_1[x=p] 
-\end{align*}
-\end{center}
-
-If $t_2[\bullet]$ is not in WHNF (this sort of unevaluated closure is called a
-\emph{thunk}~\cite{ingerman1961way,peyton1992implementing}), then if it is
-entered in either the evaluation of $t$ or $t_1$, the resulting value will
-overwrite the closure at $p$. The result of the computation is then shared with
-all other instances of $x$ in $t$ and $t_1$. In the case that terms have a large
-number of shared variables, environment duplication can be expensive.
-Compile-time transformation ~\cite{peyton1992implementing} (tupling arguments)
-helps, but we show that the machine can avoid duplication completely.
-
-Depending on $g$, either or both of the closures created for its arguments may
-not be evaluated.  Therefore, it is possible that the work of creating the
-environment for that thunk will be wasted. This waste is well known, and
-existing approaches address it by avoiding thunks as much as possible
-~\cite{jonesstg,johnsson1984efficient}. Unfortunately, in cases like the above
-example, thunks are necessary. Indeed, even if we tuple the closures for $x$,
-$y$, and $z$, that tuple could be wasted if neither $t$ nor $t'$ is used. Thus,
-we would like to minimize the cost of creating such thunks.
-
-Thunks are special in another way.  Recall that one advantage of the flat
-environments is quick variable lookups. In a lazy language, this advantage is
-reduced because \emph{a thunk can only be entered once}. After it is entered, it
-is overwritten with a value, so the next time that heap location is entered it
-is entered with a value and a different environment. Thus, the work to ensure
-that the variable lookup is fast is used only once. This is in contrast to
-a call by value language, in which every closure is constructed for a value,
-and can be entered an arbitrary number of times. 
-
-A more subtle drawback of the flat environment representation is that
-environments can vary in size, and thus a value in WHNF can be too large to fit
-in the space allocated for the thunk it is replacing. This problem is discussed
-in~\cite{jonesstg}, where the proposed solution is to put the value closure in
-a fresh location in the heap where there is sufficient room. The original
-thunk location is then replaced with an indirection to the value at the freshly
-allocated location. These indirections are removed during garbage collection,
-but do impose some cost, both in runtime efficiency and implementation
-complexity~\cite{jonesstg}.
-
-We have thus far ignored a number of details with regard to current
-implementations. For example, the STG machine can split the flat environment, so
-that part is allocated on the stack and part on the heap.  The TIM allocates its
-flat environments separately from its closures so that each closure is a code
-pointer, environment pointer pair~\cite{TIM} while the STG machine keeps
-environment and code co-located~\cite{jonesstg}. Still, the basic design
-principle holds: a flat environment for each closure allows quick variable
-indexing, but with an initial overhead.
-
-To summarize, the flat environment representation in a call by need language is
-whenever a term might be needed, the necessary environment is constructed from
-the current environment.  This operation can be expensive, and it is wasted if
-the variable is never entered. In this work, we aim to minimize this potentially
-unnecessary overhead.
-
-Figure~\ref{fig:designspace} depicts the design space relevant to this paper.
-There are existing call by value machines with both flat and shared
-environments, and call by need machines with flat environments. As far as we are
-aware, we are the first to use a shared environment to implement lazy
-evaluation.
-
-\begin{figure*}
-\begin{tabularx}{\textwidth}{l | X | X}
-                & Flat Environment     & Shared Environment \\ \hline
-  Call by need  & STG~\cite{jonesstg}, 
-                  TIM~\cite{TIM}, 
-                  GRIN~\cite{boquist1997grin} 
-                & $\mathcal{CE}$ Machine (this paper) \\
-  Call by value & ZAM~\cite{leroy1990zinc}, 
-                  SML/NJ~\cite{appel1991standard}
-                & ZAM,
-                  SECD~\cite{landin1964mechanical}, 
-                  SML/NJ \\
-\end{tabularx}
-\caption{Evaluation strategy and environment structure design space. Each
-acronym refers to an existing implementation. Some implementations use multiple
-environment representations.}
-\label{fig:designspace}
-\end{figure*}
+The primary insight of the $\mathcal{CE}$ machine is that it uses shared
+environments to share results between instances of a variable. See \cite{cem}
+for more details.
 
 \subsection{Big Step Semantics}
 
-Our big step semantics closely resemble the standard call-by-need semantics,
-with a few changes for one purpose: instead of standard lambda terms, we now are
-using terms with deBruijn indices, and closing the the lambda term under a
-pointer into a shared environment structure.  
+Our big step semantics resemble a hybrid between Curien's calculus of closures
+and Ariola et al. call-by-need operational semantics. We use terms with deBruijn
+indices and close the the lambda term under a pointer into a shared environment
+structure (the Heap).  
 
 The big step semantics can be seen in Figure~\ref{fig:bigstepcem}. The
 \texttt{clu} function is a partial function that looks up a closure in the
@@ -191,31 +83,70 @@ that when referring to a fresh heap location, we don't require freshness with
 respect to a substitution term, because there is no substitution. This is in
 contrast to the operational semantics of Ariola et al \cite{ariola1995call}.
 
-This proof proceeds by induction on the step relation. For the \texttt{Id} rule,
-it follows from the fact that the current closure is closed under the reachable
-heap, so that we may safely insert it into a location in the unreachable heap
-while retaining that it stays closed under the heap to the left. In addition, we
-can take a closure from somewhere in the reachable heap, and safely shift our
-reachable heap over to the left of that closure while making that closure our
-current closure, corresponding to entering a closure. Note that because we
-inform.     
-
-\begin{figure}
-\begin{lstlisting}
-Inductive step : configuration → configuration → Prop :=
-  | Id : ∀ M B x y z Φ Φ' Υ Ψ v e, clu v z (Υ ++ x↦cl M y::Φ) = Some (x, M) → 
-      ⟨Φ & x↦cl M y, Υ, Ψ⟩M ⇓ ⟨Φ' & x↦cl M y, Υ, Ψ⟩close (:λB) e →
-    ⟨Φ, x↦cl M y, Υ & Ψ⟩close v z ⇓ ⟨Φ', x↦ cl (close (:λB) e) y, Υ & Ψ⟩close (:λB) e
-  | Abs : ∀ N Φ Ψ e, ⟨Φ & Ψ⟩close (:λN) e ⇓ ⟨Φ & Ψ⟩close (:λN) e
-  | App : ∀ N M B B' Φ Φ' Ψ Υ f e ne ae, 
-                  f ∉ domain (Ψ ++ Φ') → 
-          ⟨Φ & Ψ⟩close M e ⇓ ⟨Φ' & Ψ⟩close (:λB) ne → 
-      ⟨Φ', f ↦cl (close N e) ne & Ψ⟩close B f ⇓ ⟨Υ & Ψ⟩close (:λB') ae   →
-              ⟨Φ & Ψ⟩close (M@N) e ⇓ ⟨Υ & Ψ⟩close (:λB') ae
-where " c1 '⇓' c2 " := (step c1 c2).
-\end{lstlisting}
+\begin{figure*}
+\textbf{Syntax}
+\begin{align*}
+\tag{Term} t &::= i \; | \; \lambda t \; | \; t \; t  \\
+\tag{Variable} i &\in \mathbb{N}  \\
+\tag{Closure} c &::= t [l] \\
+\tag{Value} v &::= \lambda t [l] \\
+\tag{Heap} \mu &::= \epsilon \; | \; \mu [ l \mapsto \rho ] \\
+\tag{Environment} \rho &::= \bullet \; | \; c \cdot l \\
+\tag{Location} l,f &\in \mathbb{N}  \\
+\tag{State} s &::= (c, \mu)
+\end{align*}
+\textbf{Call-by-Name Semantics}
+\begin{align*}
+\tag{MVal} \inference {}{(\lambda t, \mu) \rightarrow_M (\lambda t, \mu)}
+\end{align*}
+\begin{align*}
+\tag{MApp} \inference
+{(t[l], \mu) \rightarrow_{M} (\lambda t_2[l'], \mu') \quad f \not \in \textnormal{dom}(\mu') \\ 
+(t_2[f], \mu'[f \mapsto t_3[l] \cdot l']) \rightarrow_{M} (v, \mu'')}
+{(t \; t_3[l], \mu) \rightarrow_{M} (v, \mu'')}  
+\end{align*}
+\begin{align*}
+\tag{MVar} \inference 
+{\mu(l, i) = l' \mapsto c \cdot l'' \quad (c, \mu) \rightarrow_M (v, \mu')}
+{(i[l],\mu) \rightarrow_M (v,\mu')}
+\end{align*}
+\textbf{Call-by-Need Semantics}
+\begin{align*}
+\tag{NVal} \inference{\quad}{(\lambda t, \mu) \rightarrow_N (\lambda t, \mu)}
+\end{align*}
+\begin{align*}
+\tag{NApp} \inference
+{(t[l], \mu) \rightarrow_{N} (\lambda t_2[l'], \mu') \quad f \not \in \textnormal{dom}(\mu') \\ 
+(t_2[f], \mu'[f \mapsto t_3[l] \cdot l']) \rightarrow_{N} (v, \mu'')}
+{(t \; t_3[l], \mu) \rightarrow_{N} (v, \mu'')}  
+\end{align*}
+\begin{align*}
+\tag{NVar} \inference
+{\mu(l, i) = l' \mapsto c \cdot l'' \quad (c, \mu) \rightarrow_N (v, \mu')}
+{(i[l],\mu) \rightarrow_N (v, \mu'(l' \mapsto v \cdot l''))}
+\end{align*}
 \caption{Big Step Semantics for $\mathcal{CE}$}
 \label{fig:bigstepcem}
-\end{figure}
+\end{figure*}
 
+\subsection{Cost Definitions}
 
+What do we mean when we discuss the time and space complexity for a natural
+semantics? Generally, we really care about the the number of instructions that
+will be executed in the compiled code, and the maximum amount of memory that
+will be necessary, both in the stack and the heap. One advantage to the
+simplicity of the compiler for the $\mathcal{CE}$ machine is that we can define
+this cost for our natural semantics in a simple way. We do this by defining a 
+cost function that operates on the step function directly. This is one of the
+useful features of working in a dependently typed proof asistant: we can write
+functions that compute values from proof tree. Computing values from proof
+objects requires defining our big step relation in the \texttt{Type} universe
+instead of the \texttt{Prop} universe, but this isn't a problem.
+
+We define two cost functions: one that computes the time for an evaluation
+relation instance, and none that computes the space. Our goal is to define these
+such that we can prove that the cost is preserved down through machine code. 
+
+\begin{lstlisting}
+
+\end{lstlisting}

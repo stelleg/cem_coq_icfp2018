@@ -1,4 +1,4 @@
-\section{Machine Code} \label{sec:mach}
+\section{Instruction Machine} \label{sec:mach}
 
 In this section we describe the instruction machine syntax and semantics, and
 how the relation with the stack machine from the previous section works. We can
@@ -6,6 +6,74 @@ then write down the full relation to the natural semantics of the source by
 composing this relation with the big-step to small-step relation. We thus end
 up with our final proof, namely that the call-by-need semantics are preserved
 by the machine semantics. 
+
+\subsection{Instruction Assembly}
+
+Our instruction syntax is described in Section~\ref{sec:intro}. Unlike the
+relation between the big step and small step semantics, the relation between
+the smallstep semantics and the instruction machine semantics requires an 
+assembly step. The assembler compiles lambda terms with deBruijn indices into
+instructions. It is in fact the only program transformation in this compiler, 
+which is a testament the ease of compilation of the $\mathcal{CE}$ machine.
+
+We give the full assembly function in Figure~\ref{fig:assemble}. 
+
+\begin{figure}
+\begin{lstlisting}
+Fixpoint var_inst (i : nat) : BasicBlock := match i with
+  | 0 => push EP #
+         push (RC 0) #
+         mov (EP%0) R1 #
+         mov (EP%1) EP #
+         jump None R1
+  | S i => mov EP (EP%2) # 
+           var_inst i
+  end.
+
+
+(* Assembles deBruijn indices to instructions *)
+Fixpoint assemble (t : tm) (k : nat) : Program := match t with  
+  | var v => [var_inst v]
+  | app m n => let ms := assemble m (k+1) in
+               let nk := k + 1 + length ms in
+                push EP #
+                push (RC nk) #
+                jump None (RC (k+1)) :: 
+                ms ++ 
+                assemble n nk
+  | lam b => pop R1 #
+             jump (Some (RW (WR R1), (k+1))) (RC (k+2)) ::
+             (*Update*)
+             pop R1 #  
+             mov (RC k) (R1%0) #
+             mov EP (R1%1) #
+             jump None (RC k) ::
+             (*Take*)
+             new 3 R2 #
+             mov R1 (R2%0)#
+             pop (R2%1) #
+             mov EP (R2%2) #
+             mov R2 EP #
+             jump None (k+3) :: nil
+  end. 
+\end{lstlisting}
+\caption{Assembler in Coq}
+\end{figure}
+
+For variables, the code compiles a basic block that follows the shared
+environment pointer the appropriate number of times, followed by pushing an
+update marker pointing to the closure in the heap that will be updated. For
+the application, we push the argument closure onto the stack then continue
+into the left hand side. This push-enter style compiler is the simplest to 
+reason about, though investigating eval-apply could make for interesting future
+work. Finally, abstractions are compiled into three basic blocks, the first checks
+if the top of the stack is an update marker or a instruction pointer and branches
+appropriately, while the second performs the update by replacing the closure 
+at the update location with the current closure, and the third binds the 
+argument closure to a new heap location. Note that our new location requires three
+machine words: the instruction pointer, environment pointer pair that makes 
+up the closure, as well as the shared environment pointer pointing to the 
+environment that was extended with said closure. 
 
 \subsection{Machine Semantics}
 
@@ -18,17 +86,36 @@ words, or \texttt{nat}s in our case. The first is an instruction pointer. The
 second is an environment pointer pointing into the heap. Our current closure is
 defined by our instruction pointer and environment pointer registers. 
 
+In general, the machine semantics are fairly predictable given the instructions 
+available. The \texttt{pop} instruction pops a machine word off of the stack and
+into the write operand, while the \texttt{push} reads the read operand and pushes
+it onto the stack. While we have implemented the stack as a list of words, it 
+would be straightforward future work to lower this further to be implemented as
+an in-memory array. Our \texttt{new} instruction returns an unused chunk of
+memory of the given size. Note that as with the small step $\mathcal{CE}$ semantics,
+in the future the semantics should be updated to be able to re-use dead memory
+locations, something which we currently don't manage. 
+
+We implement our program as a finite map from machine pointers to basic blocks. 
+Because we use the null pointer as a marker for updates on the stack, we start
+our basic block indices at 1. As with the stack, it would make for
+straightforward future work to replace the instruction pointer so that the
+instructions and basic blocks were represented in memory directly. 
+
 On the stack, we differentiate between update markers and argument closures by
 using a zero in place of an instruction pointer, therefore disallowing a zero
 instruction pointer, in agreement with modern conventions. We can then check for
-zero on the top of the stack, and in the case of This allows for  
+zero on the top of the stack using the optional first argument to our jump
+instruction. If the argument operand is zero, then we jump to the given
+constant location, otherwise we jump the fallback second argument. 
 
 \subsection{Relation with Small Step $\mathcal{CE}$ Semantics}
 
 We define our relation on the basic blocks created by the compiler. We relate
 the machine and small step states in fairly simple ways. The deBruijn terms of
 the small step semantics are all replaced with pointers into instruction memory,
-and we require that the mapping preserved compilation equivalence. 
+and we require that the mapping preserves a program equivalence. This relation
+relies on the fact that 
 
 For execution of instructions, we relate each rule in the small step semantics
 to a basic block of code. Note that we've artificially increased the number of

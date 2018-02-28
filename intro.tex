@@ -1,4 +1,4 @@
-\section{Introduction}
+\section{Introduction} \label{sec:intro}
 
 Compilers are an attractive target for verification because the amortized return
 on investment is high. Every time a program compiled with a verified compiler is
@@ -40,21 +40,19 @@ Our target language is a simple machine assembly language:
 \begin{align}
   \tag{Word}   n, p &\in \mathbb{N} \\
   \tag{Registers} r &::= ip \; | \; ep \; | \; r1 \; | \; r2  \\
-  \tag{Stack}     s &::= [p] \\
-  \tag{Write Operands}  wo &::= r \; | \; r* \\
+  \tag{Write Operands}  wo &::= r \; | \; r\%n \\
   \tag{Read Operands}  ro &::= wo \; | \; n \\
   \tag{Basic Blocks} bb &::= i \; \# \; bb
                        | \; \texttt{jmp} \; \{(ro, n)\} \; ro \;  \\
   \tag{Instructions} i &::= \texttt{mov} \; ro \; wo \; 
                        | \; \texttt{new} \; n \; wo \; \\
-  \notag       & \quad | \; \texttt{push} \; ro \; 
+  \notag   & \quad \;  | \; \texttt{push} \; ro \; 
                        | \; \texttt{pop} \; wo \\
-  \tag{Program}   p &::= [bb]
 \end{align}
 
 Our machine words are natural numbers, which can be written into registers or
 the heap, which is a finite map from pointers $p$ to words. Pointers can index
-into the heap or into the program. Our instructions are a tiny subset of
+into the heap or into the program. Our machine consists Our instructions are a tiny subset of
 standard instructions on modern machines. Ours consist of \texttt{mov}
 instructions, direct and indirect \texttt{jmp}s with an optional conditional
 location for when an argument is zero, , a \texttt{new} instruction that

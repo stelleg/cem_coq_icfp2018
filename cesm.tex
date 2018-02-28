@@ -28,27 +28,43 @@ the stack, though investigating that possibility would make for interesting
 future work. That said, the proof of retention of well-formedeness is much
 simpler: there is no inductive step.   
 
-\begin{figure}
-\begin{lstlisting}
-Inductive step : state → state → Prop :=
-  | Upd : ∀ Φ Υ Ψ b e e' c l s, 
-  st Ψ (Φ++(l,cl c e')::Υ) (inr l::s) (close (lam b) e) →s 
-  st Ψ (Φ++(l,cl (close (lam b) e) e')::Υ) s (close (lam b) e)
-  | Var' : ∀ Υ Φ Ψ s v l c e e', 
-  clu v e (Φ++(l,cl c e')::Υ) = Some (l,c) → 
-  st (Φ++(l,cl c e')::Υ) Ψ s (close (var v) e) →s 
-  st Υ (Ψ++Φ++[(l,cl c e')]) (inr l::s) c
-  | Abs' : ∀ Υ Φ b e f c s, 
-  f ∉ domain (Υ ++ Φ) → 
-  st Υ Φ (inl c::s) (close (lam b) e) →s 
-  st ((f, cl c e)::Υ) Φ s (close b f)
-  | App' : ∀ Υ Φ e s n m, 
-  st Υ Φ s (close (app m n) e) →s 
-  st Υ Φ (inl (close n e)::s) (close m e)
-where " c1 '→s' c2 " := (step c1 c2).
-\end{lstlisting}
+\begin{figure*}
+\textbf{Syntax}
+\begin{align*}
+\tag{State} s &::= \langle c, \sigma, \mu \rangle \\
+\tag{Term} t &::= i \; | \; \lambda t \; | \; t \; t  \\
+\tag{Variable} i &\in \mathbb{N}  \\
+\tag{Closure} c &::= t [l] \\
+\tag{Value} v &::= \lambda t[l] \\
+\tag{Heap} \mu &::= \epsilon \; | \; \mu [ l \mapsto \rho ] \\
+\tag{Environment} \rho &::= \bullet \; | \; c \cdot l \\
+\tag{Context} \sigma &::= \square \; | \; \sigma \; c \;  | \; \sigma \; u \\
+\tag{Location} l,u,f &\in \mathbb{N}
+\end{align*}
+\textbf{Semantics}
+\begin{align*}
+\tag{Upd}
+\langle v,  \sigma \; u , \mu \rangle 
+  &\rightarrow_{\mathcal{\mathcal{C} \mskip -4mu \mathcal{E}}}
+\langle v, \sigma, \mu(u \mapsto v \cdot l) \rangle  
+\; \textnormal{where} \; c \cdot l = \mu(u) \\
+\tag{Lam}
+\langle \lambda t[l], \sigma \; c, \mu \rangle 
+  &\rightarrow_{\mathcal{\mathcal{C} \mskip -4mu \mathcal{E}}}
+\langle t[f], \sigma, \mu[f \mapsto c \cdot l]\rangle f \not \in \textnormal{dom}(\mu)  \\
+\tag{App}
+\langle t \; t'[l], \sigma, \mu \rangle
+  &\rightarrow_{\mathcal{\mathcal{C} \mskip -4mu \mathcal{E}}}
+\langle t[l], \sigma \; t'[l], \mu \rangle \\
+\tag{Var}
+\langle i[l], \sigma, \mu \rangle
+  &\rightarrow_{\mathcal{\mathcal{C} \mskip -4mu \mathcal{E}}}
+\langle c[l'], \sigma \; u, \mu \rangle
+\; \textnormal{where} \; \mu(l, i) = u \mapsto c \cdot l'
+\end{align*}
 \caption{Small Step $\mathcal{CE}$ Semantics}
-\end{figure}
+\label{fig:cesm}
+\end{figure*}
 
 \subsection{Relation to Big Step $\mathcal{CE}$ Semantics}
 
