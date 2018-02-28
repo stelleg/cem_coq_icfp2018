@@ -101,13 +101,15 @@ code, and small step and big step semantics. The paper proceeds by describing
 each compilation step that the compiler makes, and sketching the proof that the
 step preserves semantics.
 
-Specifically, in Section 1 we cover the $\mathcal{CE}$ big step call-by-need
-semantics. In Section 2 we describe the $\mathcal{CE}$ small step semantics and
-how it relates to the big step semantics. We finish the chain in Section 3,
-describing the instruction machine semantics and it's relation to the
-$\mathcal{CE}$ small step semantics.  While this compiler is untyped, we use
-Section 4 to discuss how one could incorporate a type system into the compiler.
-We then discuss threats to validity in Section 5 and conclude in Section 6. 
+Specifically, we start with background in Section \ref{sec:back}, then in
+Section \ref{sec:cem} we cover the $\mathcal{CE}$ big step call-by-need
+semantics. In Section \ref{sec:cesm} we describe the $\mathcal{CE}$ small step
+semantics and how it relates to the big step semantics. In Section
+\ref{sec:mach} we describe the instruction machine semantics and it's relation
+to the $\mathcal{CE}$ small step semantics.  While this compiler is untyped, we
+use Section \ref{sec:applications} to discuss how one could incorporate a type
+system into the compiler. We then discuss threats to validity and future work in
+Section \ref{sec:discussion} and conclude in Section \ref{sec:conclusion}. 
 
 The compiler and all the proofs are available as Coq source code at
 \texttt{https://github.com/stelleg/cem\_coq}.

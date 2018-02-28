@@ -27,6 +27,9 @@
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{corollary}{Corollary}[theorem]
 \newtheorem{lemma}[theorem]{Lemma}
+\newenvironment{proofoutline}
+ {\renewcommand\qedsymbol{}\proof[Proof outline]}
+ {\endproof}
 
 \begin{document}
 
@@ -62,7 +65,6 @@ preserved.
 
 \input{intro}
 \input{background}
-\input{cbn}
 \input{cem}
 \input{cesm}
 \input{assembly}

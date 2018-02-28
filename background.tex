@@ -93,21 +93,27 @@ clear how these machines could be implemented efficiently.
 \subsection{Verification}
 There has been much recent work on machine verified compilers. This paper
 addresses two holes in the literature: 
+
 \begin{itemize}
 \item Verification of a non-strict compiler
-\item Verification of time and space requirements of the machiine code 
+\item Verification of time and space requirements of machine code for a
+higher-order functional language
 \end{itemize}
+
 Existing verified compilers have focused on verification of \emph{results},
 without support for verification of operational properties, such as number of
 instructions or amount of space. We argue that in the context of functional
 languages, where optimizations often change asymptotic time and space behaviour,
-this kind of reasoning ability is very attractive. It also opens the possibility
-of reasoning about programs that \emph{really} can't go wrong: the verified
-compiler potentially transforming a proof that the input program will terminate
-in some specified number of reductions and heap space into the compiled program.
+this kind of reasoning is crucial for programmers to be able to reason about the
+performance of their programs. It also opens the possibility of reasoning about
+programs that \emph{really} can't go wrong: the verified compiler potentially
+transforming a proof that the input program will terminate in some specified
+number of reductions and heap space into the compiled program.
 
 It also sets the stage for enabling verified optimizations, in the sense that
 one could reason about whether or not optimizations at the source level
-verifiably optimize the time and/or space at the machine code level, in addition
-to the more standard proof that they retain the semantics of the input program. 
+verifiably optimize time and/or space costs at the machine code level, in
+addition to the more standard proof that they retain the semantics of the input
+program. 
+
 

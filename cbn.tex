@@ -1,12 +1,20 @@
 \section{Call-by-need}
 
 Call-by-need semantics ensures that arguments are only evaluated when needed,
-when needed, and memoize the result so that they are only evaluated once. This
-is in contrast to the more common call-by-value, which always evaluates
-arguments, and call-by-name, which evaluates arguments for every corresponding
-variable dereference. Each semantics has advantages and drawbacks, and
-increasingly programming languages are incorporating the ability to switch
-between them \cite{?}. 
+and the result are memoized so that they are only evaluated once. This is in
+contrast to the more common call-by-value, which always evaluates arguments, and
+call-by-name, which evaluates arguments for every corresponding variable
+dereference. Each semantics has advantages and drawbacks, and increasingly
+programming languages are incorporating the ability to switch between them
+\cite{?}. Call-by-need is used heavily to implement existing non-strict
+languages such as Haskell \cite{stg}. While Haskell doesn't require call-by-need
+semantics, programmers often rely on the compiler implementing memoization for
+their code to have reasonable runtimes. This reliance is one of our primary
+motivations to reason formally about call-by-need.  
+
+In selecting a call-by-need semantics for our source semantics, there a couple
+of well known semantics that would make for an obvious choice. In this section
+we discuss why we opted to not 
 
 One well known call-by-need semantics is Ariola et al.'s call-by-need lambda
 calculus \cite{?}. It is an untyped language with the standard lambda calculus
@@ -28,16 +36,7 @@ forgotten heap in the Id rule, the semantics can break the invariant that every
 address in the domain of the heap is unique, and can therefore perform incorrect
 evaluation. For an example of how it can go wrong see Figure~\ref{cbnwrong}, 
 
-To fix this problem, instead of throwing away the unreachable part of the heap
-in the Id rule, one can keep it around, but separate the reachable heap from the
-unreachable explicitly. We then ensure that freshness is enforced with respect
-to both the unreachable and reachable parts of the heap, preventing the issue
-described above. This fix has the additional benefit that it simplifies the
-relationship to machine code, keeping the heap in tact as a global entity, in
-contrast to existing fixes to this issue \cite{?}. The fixed semantics are shown
-in Figure~\ref{fig:cbnfixed}. The reachable and unreachable heaps are seperated by
-the \texttt{\&} character.
-
+Another possi
 \begin{figure}
 \lstinputlisting{cbnbroken.v}
 \caption{Original, broken call-by-need semantics}
