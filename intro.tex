@@ -42,7 +42,7 @@ Our target language is a simple machine assembly language:
   \tag{Registers} r &::= ip \; | \; ep \; | \; r1 \; | \; r2  \\
   \tag{Write Operands}  wo &::= r \; | \; r\%n \\
   \tag{Read Operands}  ro &::= wo \; | \; n \\
-  \tag{Basic Blocks} bb &::= i \; \# \; bb
+  \tag{Basic Blocks} bb &::= i \; ; \; bb \; 
                        | \; \texttt{jmp} \; \{(ro, n)\} \; ro \;  \\
   \tag{Instructions} i &::= \texttt{mov} \; ro \; wo \; 
                        | \; \texttt{new} \; n \; wo \; \\
