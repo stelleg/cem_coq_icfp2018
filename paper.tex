@@ -1,4 +1,4 @@
-\documentclass[preprint]{sigplanconf}
+\documentclass[acmsmall,review,anonymous]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
 
 \usepackage{tabularx}
 \usepackage{amsfonts}
@@ -34,21 +34,46 @@
 
 \begin{document}
 
-\conferenceinfo{ICFP 2018}{} 
-\copyrightyear{2018} 
-\copyrightdata{[to be supplied]} 
+\acmJournal{PACMPL}
+\acmVolume{1}
+\acmNumber{CONF} % CONF = POPL or ICFP or OOPSLA
+\acmArticle{1}
+\acmYear{2018}
+\acmMonth{1}
+\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
+\startPage{1}
 
-\titlebanner{Preprint}        % These are ignored unless
+%\titlebanner{Preprint}        % These are ignored unless
 
 \title{Verifiably Lazy}
 \subtitle{Verified Compilation of Call-by-Need}
 
-\authorinfo{George Stelle}
-           {University of New Mexico}
-           {stelleg@cs.unm.edu}
-\authorinfo{Darko Stefanovic}
-           {University of New Mexico}
-           {darko@cs.unm.edu}
+\author{George Stelle}
+\affiliation{
+  \position{Scientist}
+  \department{CCS-7}              %% \department is recommended
+  \institution{Los Alamos National Laboratory}            %% \institution is required
+  \streetaddress{Bikini Atoll Rd., SM 30}
+  \city{Los Alamos}
+  \state{New Mexico}
+  \postcode{87545}
+  \country{United States}                    %% \country is recommended
+}
+\email{stelleg@lanl.gov}          %% \email is recommended
+
+\author{Darko Stefanovic}
+\affiliation{
+  \position{Professor and Chair}
+  \department{Computer Science}              %% \department is recommended
+  \institution{University of New Mexico}            %% \institution is required
+  \streetaddress{1 University of New Mexico}
+  \city{Albuquerque}
+  \state{New Mexico}
+  \postcode{87131}
+  \country{United States}                    %% \country is recommended
+}
+\email{darko@unm.edu}          %% \email is recommended
+
 \maketitle
 
 \begin{abstract}
